@@ -1,0 +1,58 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-and-release:
+    name: Build and Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build release
+        run: cargo build --release
+
+      - name: Get tag version
+        id: tag
+        run: echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Prepare artifacts
+        run: |
+          cd target/release
+          cp librsets2_telementry.so rsets2_telementry_plugin.so
+          sha256sum rsets2_telementry_plugin.so > rsets2_telementry_plugin.so.sha256
+          cat rsets2_telementry_plugin.so.sha256
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.tag.outputs.version }}
+          draft: false
+          prerelease: false
+          files: |
+            target/release/rsets2_telementry_plugin.so
+            target/release/rsets2_telementry_plugin.so.sha256
+          body: |
+            ## Release ${{ steps.tag.outputs.version }}
+
+            ETS2/ATS Telemetry Plugin for Linux
+
+            ### Files
+            - `rsets2_telementry_plugin.so` - The plugin binary
+            - `rsets2_telementry_plugin.so.sha256` - SHA256 checksum
+
+            ### Installation
+            1. Download `rsets2_telementry_plugin.so`
+            2. Place it in your ETS2 mod plugins directory
+
+            For more information, see the [README](https://github.com/${{ github.repository }}/blob/${{ steps.tag.outputs.version }}/README.md)
