@@ -1,0 +1,8 @@
+[package]
+name = "rsets2_telementry"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "rsets2_telementry"
+crate-type = ["cdylib"]
