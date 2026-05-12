@@ -1,7 +1,9 @@
+mod log;
 mod sdk;
 
 use std::net::UdpSocket;
 
+use log::{log_error, log_info};
 use sdk::telemetry::{
     ScsTelemetryInitParams, ScsTelemetryInitParamsV100, SCS_TELEMETRY_VERSION_1_00,
 };
@@ -18,14 +20,24 @@ pub unsafe extern "C" fn scs_telemetry_init(
         return SCS_RESULT_UNSUPPORTED;
     }
 
-    let _params = &*(params as *const ScsTelemetryInitParamsV100);
+    let params = &*(params as *const ScsTelemetryInitParamsV100);
+    log::init(params.common.log);
 
-    if let Ok(socket) = UdpSocket::bind("0.0.0.0:0") {
-        let _ = socket.send_to(b"Hello, world!", BROADCAST_ADDR);
+    log_info!("rsets2_telemetry: init");
+
+    match UdpSocket::bind("0.0.0.0:0") {
+        Ok(socket) => {
+            let _ = socket.send_to(b"Hello, world!", BROADCAST_ADDR);
+        }
+        Err(e) => {
+            log_error!("rsets2_telemetry: failed to bind UDP socket: {e}");
+        }
     }
 
     SCS_RESULT_OK
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn scs_telemetry_shutdown() {}
+pub unsafe extern "C" fn scs_telemetry_shutdown() {
+    log_info!("rsets2_telemetry: shutdown");
+}
